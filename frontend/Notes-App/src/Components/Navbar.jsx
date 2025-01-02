@@ -3,8 +3,8 @@ import ProfileInfo from './Cards/ProfileInfo'
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar/SearchBar';
 const Navbar = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const navigate = useNavigate;
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const navigate = useNavigate();
   const onLogout = () => {
     navigate("/login");
   };
