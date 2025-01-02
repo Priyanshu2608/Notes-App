@@ -1,5 +1,8 @@
 import React, {useState} from 'react'
 import Navbar from '../../Components/Navbar';
+import PasswordInput from '../../Components/Input/PasswordInput';
+import { Link } from 'react-router-dom';
+import { validateEmail } from '../../utils/helper';
 
 const Signup = () => {
   const[name,setName]=useState("");
@@ -8,7 +11,22 @@ const Signup = () => {
   const[error,setError]=useState(null);
   const handleSignup = async(e) => {
     e.preventDefault();
+
+    if(!name){
+      setError("Please enter your name");
+      return;}
+
+    if(!validateEmail(email)) {
+      setError("Please enter your email");
+      return;
     }
+    if(!password){
+      setError("Please enter a password");
+      return;
+    }
+    setError("");
+  };
+
   return (
     <>
     <Navbar/>
@@ -31,6 +49,19 @@ const Signup = () => {
             value={email} 
             onChange={(e)=>setEmail(e.target.value)}
              />
+             <PasswordInput
+              value={password}
+              onChange={(e)=>setPassword(e.target.value)} 
+            />
+            {error && <p className="text-red-500 text-xs pb-1">{error}</p>}  
+            <button type='submit' className='btn-primary'>
+              Create An Account
+            </button>
+            <p className="text-sm text-center mt-4">
+              Have an account?{""}
+              <Link to='/login' className="font-medium text-primary underline">Login </Link>
+
+            </p>
             </form>
             </div>
             </div>
