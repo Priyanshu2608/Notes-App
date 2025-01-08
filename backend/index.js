@@ -67,5 +67,48 @@ app.post("/create-account", async(req,res)=>{
     });
 });
 
+app.post("/login", async(req,res)=>{
+    const{email, password} =req.body;
+
+    if(!email) {
+        return res
+        .status(400)
+        .json({message: " Enter Email"})
+
+    }
+
+    if (!password){
+        return res
+        .status(400)
+        .json({message : "Your Password"})
+    }
+
+    const userInfo = await User. findOne({email:email});
+
+    if(!userInfo){
+        return res
+        .status(400)
+        .json({message: "User not found"})
+    }
+    if (userInfo.email == email && userInfo.password == password){
+        const user = { user : userInfo};
+        const accessToken = jwt.sign(User, process.env.ACCESS_TOKEN_SECRET, {
+            expiresIn: "30000m"
+        });
+        return res.json({
+            error:false,
+            message:"Login successful",
+            email,
+            accessToken,
+        });
+
+    } else{
+        return res.status(400).json({
+            error:true,
+            message: "Invalid Credentials",
+        });
+    }
+})
+
 app.listen(8001);
 module.exports = app;
