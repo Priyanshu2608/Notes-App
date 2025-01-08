@@ -9,6 +9,8 @@ mongoose.connect(config.connectionString);
 const jwt =require("jsonwebtoken");
 const {authenticateToken}= require("./utilities")
 
+const User = require("./models/user.model");
+
 app.use(express.json());
 app.use(
     cors({
@@ -38,7 +40,32 @@ app.post("/create-account", async(req,res)=>{
         .status(400)
         .json({error: true, message : "Passowrd Reqiuired"})
     }
-})
+    const isUser =await User.findOne({ email:email});
+    if(isUser){
+        return res.json({
+            error: true,
+            message: "User Already There",
+        });
+      
+    }
+    const user =new User({
+        fullName,
+        email,
+        password,
+    });
+    await user.save();
 
-app.listen(8000);
+    const accessToken = jwt.sign({User}, process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn: "30000m"
+    });
+    return res.json({
+        error: false,
+        user,
+        accessToken,
+        message: "Account Creation Successful", 
+
+    });
+});
+
+app.listen(8001);
 module.exports = app;
