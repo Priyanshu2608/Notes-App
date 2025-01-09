@@ -56,9 +56,10 @@ app.post("/create-account", async(req,res)=>{
     });
     await user.save();
 
-    const accessToken = jwt.sign({User}, process.env.ACCESS_TOKEN_SECRET,{
-        expiresIn: "30000m"
+    const accessToken = jwt.sign({ User }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "30m",
     });
+    
     return res.json({
         error: false,
         user,
@@ -84,7 +85,7 @@ app.post("/login", async(req,res)=>{
         .json({message : "Your Password"})
     }
 
-    const userInfo = await User. findOne({email:email});
+    const userInfo = await User.findOne({email:email});
 
     if(!userInfo){
         return res
@@ -111,41 +112,79 @@ app.post("/login", async(req,res)=>{
     }
 });
 
-app.post("/add-note", authenticateToken, async(req,res)=>{
-    const { title, content, tags} = req.body;
-    const {user} = req.user;
+app.post("/add-note", authenticateToken, async (req, res) => {
+    const { title, content, tags } = req.body;
+    const { user } = req.user; // `req.user` should come from `authenticateToken`
 
-    if(!title){
-        return res
-        .status(400)
-        .json({error: true, message: "Title is empty"});
+    if (!title) {
+        return res.status(400).json({ error: true, message: "Title is empty" });
     }
-    if(!content){
-        return res
-        .status(400)
-        .json({ error: true, message: "Content is empty" });
+    if (!content) {
+        return res.status(400).json({ error: true, message: "Content is empty" });
     }
-    try{
+
+    try {
         const note = new Note({
             title,
             content,
             tags: tags || [],
             userId: user._id,
-    });
-    await note.save();
-    return res.json({
-        error:false,
-        note,
-        message:"Note Added ",
-    
-    });
-} catch(error){
-    return res.status(500).json({
-        error: true,
-        message: "Internal Server Error"
-    });
-}
+        });
+        await note.save();
+        return res.json({
+            error: false,
+            note,
+            message: "Note added successfully",
+        });
+    } catch (error) {
+        console.error(error); // Log the error for debugging
+        return res.status(500).json({
+            error: true,
+            message: "Internal Server Error",
+        });
+    }
 });
+
+
+app.put("/edit-note/:noteId", authenticateToken, async (req, res) => {
+    const noteId = req.params.noteId;
+    const { title, content, tags, isPinned } = req.body;
+    const { user } = req.user; // `req.user` should come from `authenticateToken`
+
+    if (!title && !content && !tags) {
+        return res.status(400).json({ error: true, message: "No changes made" });
+    }
+
+    try {
+        // Find the note by ID and user ID
+        const note = await Note.findOne({ _id: noteId, userId: user._id });
+        if (!note) {
+            return res.status(404).json({ error: true, message: "Note not found" });
+        }
+
+        // Update the fields if provided
+        if (title) note.title = title;
+        if (content) note.content = content;
+        if (tags) note.tags = tags;
+        if (isPinned !== undefined) note.isPinned = isPinned;
+
+        await note.save();
+
+        return res.json({
+            error: false,
+            note,
+            message: "Note updated successfully",
+        });
+    } catch (error) {
+        console.error(error); // Log the error for debugging
+        return res.status(500).json({
+            error: true,
+            message: "Internal Server Error",
+        });
+    }
+});
+
+
 
 app.listen(8001);
 module.exports = app;
