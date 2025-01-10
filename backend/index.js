@@ -83,6 +83,30 @@ app.get("/get-all-notes", authenticateToken, async (req, res) => {
   }
 });
 
+app.get("/get-user", authenticateToken, async (req, res) => {
+    try {
+      // Use `req.user._id` directly
+      const userId = req.user._id;
+  
+      // Find the user by ID
+      const isUser = await User.findOne({ _id: userId });
+      if (!isUser) {
+        return res.status(401).json({ error: true, message: "User not found" });
+      }
+  
+      // Return user details
+      return res.json({
+        error: false,
+        user: { fullName: isUser.fullName, email: isUser.email, "_id": isUser._id, createdOn: isUser.createdOn},
+        message: "User retrieved successfully",
+      });
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      return res.status(500).json({ error: true, message: "Internal Server Error" });
+    }
+  });
+  
+
 app.post("/add-note", authenticateToken, async (req, res) => {
   const { title, content, tags } = req.body;
   const userId = req.user._id;
