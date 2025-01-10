@@ -4,9 +4,9 @@ import { MdClose } from 'react-icons/md';
 import axiosInstance from '../../utils/axiosInstance';
 
 const AddEditNotes = ({onClose, noteData,getAllNotes, type}) => {
-    const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
-    const [tags, setTags] = useState([]);
+    const [title, setTitle] = useState(noteData?.title ||"");
+    const [content, setContent] = useState(noteData?.content||"");
+    const [tags, setTags] = useState(noteData?.tags||[]);
 
     const [error, seterror] = useState(null);
     const addNewNote = async ()=>{
@@ -33,7 +33,30 @@ const AddEditNotes = ({onClose, noteData,getAllNotes, type}) => {
         
       }
     };
-    const editNote = async ()=>{};
+    const editNote = async ()=>{ 
+      const noteId= noteData._id
+      try{
+      const response= await axiosInstance.put("/edit-note/"+ noteId, {
+        title,
+        content,
+        tags,
+      });
+      if(response.data && response.data.note){
+        getAllNotes()
+        onClose()
+      }
+    }
+    catch(error){
+      if(
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ){
+        seterror(error.response.data.message);
+      }
+
+      
+    }};
     const handleAddNote = ()=>{
       if (!title){
         seterror("Please Enter The Title");
@@ -87,7 +110,7 @@ const AddEditNotes = ({onClose, noteData,getAllNotes, type}) => {
         <TagInput tags={tags} setTags={setTags}/>
       </div>
       {error && <p className="text-red-500 text-xs pt-4">{error}</p>}
-      <button className="btn-primary font-medium mt-5 p-3" onClick={handleAddNote}>ADD</button>
+      <button className="btn-primary font-medium mt-5 p-3" onClick={handleAddNote}>{type === "edit" ? "UPDATE": "ADD"}</button>
     </div>
   )
 }

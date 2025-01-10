@@ -14,6 +14,10 @@ const Home = () => {
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
 
+  const handleEdit =(noteDetails) =>{
+    setOpenAddEditModal({isShown: true, data: noteDetails, type:"edit"})
+  }
+
   // Function to open the modal
   const openModal = () => {
     setOpenAddEditModal({ isShown: true });
@@ -73,7 +77,7 @@ const Home = () => {
               content={item.content}
               tags={item.tags}
               isPinned={item.isPinned}
-              onEdit={() => {}}
+              onEdit={() => {handleEdit(item)}}
               onDelete={() => {}}
               onPinNote={() => {}}
             />
