@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { authenticateToken } = require("./utilities");
 
 const User = require("./models/user.model");
@@ -12,9 +13,10 @@ const app = express();
 const config = require("./config.json");
 
 // MongoDB connection
-mongoose.connect(config.connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose
+  .connect(config.connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Database connected successfully"))
-  .catch(err => console.error("Database connection failed:", err));
+  .catch((err) => console.error("Database connection failed:", err));
 
 // Middleware
 app.use(express.json());
@@ -25,6 +27,7 @@ app.get("/", (req, res) => {
   res.json({ data: "Hello World" });
 });
 
+// Create account
 app.post("/create-account", async (req, res) => {
   const { fullName, email, password } = req.body;
 
@@ -36,7 +39,10 @@ app.post("/create-account", async (req, res) => {
     const isUser = await User.findOne({ email });
     if (isUser) return res.status(400).json({ error: true, message: "User already exists" });
 
-    const user = new User({ fullName, email, password });
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({ fullName, email, password: hashedPassword });
     await user.save();
 
     const accessToken = jwt.sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
@@ -47,6 +53,7 @@ app.post("/create-account", async (req, res) => {
   }
 });
 
+// Login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -55,7 +62,13 @@ app.post("/login", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user || user.password !== password) {
+    if (!user) {
+      return res.status(400).json({ error: true, message: "Invalid credentials" });
+    }
+
+    // Compare the provided password with the hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return res.status(400).json({ error: true, message: "Invalid credentials" });
     }
 
@@ -67,15 +80,12 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Get all notes
 app.get("/get-all-notes", authenticateToken, async (req, res) => {
   const userId = req.user._id;
 
   try {
-    console.log("Fetching notes for userId:", userId);
-
     const notes = await Note.find({ userId }).sort({ isPinned: -1 });
-    console.log("Notes retrieved:", notes);
-
     return res.json({ error: false, notes, message: notes.length ? "Notes retrieved" : "No notes found" });
   } catch (err) {
     console.error("Error fetching notes:", err);
@@ -83,30 +93,28 @@ app.get("/get-all-notes", authenticateToken, async (req, res) => {
   }
 });
 
+// Get user details
 app.get("/get-user", authenticateToken, async (req, res) => {
-    try {
-      
-      const userId = req.user._id;
-  
-      
-      const isUser = await User.findOne({ _id: userId });
-      if (!isUser) {
-        return res.status(401).json({ error: true, message: "User not found" });
-      }
-  
-      // Return user details
-      return res.json({
-        error: false,
-        user: { fullName: isUser.fullName, email: isUser.email, "_id": isUser._id, createdOn: isUser.createdOn},
-        message: "User retrieved successfully",
-      });
-    } catch (err) {
-      console.error("Error fetching user:", err);
-      return res.status(500).json({ error: true, message: "Internal Server Error" });
-    }
-  });
-  
+  try {
+    const userId = req.user._id;
 
+    const isUser = await User.findOne({ _id: userId });
+    if (!isUser) {
+      return res.status(401).json({ error: true, message: "User not found" });
+    }
+
+    return res.json({
+      error: false,
+      user: { fullName: isUser.fullName, email: isUser.email, _id: isUser._id, createdOn: isUser.createdOn },
+      message: "User retrieved successfully",
+    });
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    return res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
+// Add note
 app.post("/add-note", authenticateToken, async (req, res) => {
   const { title, content, tags } = req.body;
   const userId = req.user._id;
@@ -124,6 +132,7 @@ app.post("/add-note", authenticateToken, async (req, res) => {
   }
 });
 
+// Edit note
 app.put("/edit-note/:noteId", authenticateToken, async (req, res) => {
   const { noteId } = req.params;
   const { title, content, tags, isPinned } = req.body;
@@ -146,13 +155,12 @@ app.put("/edit-note/:noteId", authenticateToken, async (req, res) => {
   }
 });
 
+// Delete note
 app.delete("/delete-note/:noteId", authenticateToken, async (req, res) => {
   const { noteId } = req.params;
   const userId = req.user._id;
 
   try {
-    console.log("Attempting to delete note:", noteId, "for userId:", userId);
-
     const note = await Note.findOne({ _id: noteId, userId });
     if (!note) return res.status(404).json({ error: true, message: "Note not found" });
 
@@ -163,41 +171,42 @@ app.delete("/delete-note/:noteId", authenticateToken, async (req, res) => {
     return res.status(500).json({ error: true, message: "Internal Server Error" });
   }
 });
-app.put("/update-note-pinned/:noteId", authenticateToken, async(req,res)=>{
-    const { noteId } = req.params;
-    const {  isPinned } = req.body;
-    const userId = req.user._id;
-  
-    try {
-      const note = await Note.findOne({ _id: noteId, userId });
-      if (!note) return res.status(404).json({ error: true, message: "Note not found" });
-  
 
-       note.isPinned = isPinned;
-  
-      await note.save();
-      return res.json({ error: false, note, message: "Note updated successfully" });
-    } catch (err) {
-      console.error("Error updating note:", err);
-      return res.status(500).json({ error: true, message: "Internal Server Error" });
-    }
-})
+// Update note pinned status
+app.put("/update-note-pinned/:noteId", authenticateToken, async (req, res) => {
+  const { noteId } = req.params;
+  const { isPinned } = req.body;
+  const userId = req.user._id;
 
+  try {
+    const note = await Note.findOne({ _id: noteId, userId });
+    if (!note) return res.status(404).json({ error: true, message: "Note not found" });
+
+    note.isPinned = isPinned;
+
+    await note.save();
+    return res.json({ error: false, note, message: "Note updated successfully" });
+  } catch (err) {
+    console.error("Error updating note:", err);
+    return res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
+// Search notes
 app.get("/search-notes", authenticateToken, async (req, res) => {
-  const userId = req.user._id; // Retrieve user ID from authenticated token
-  const { query } = req.query; // Extract the query parameter
+  const userId = req.user._id;
+  const { query } = req.query;
 
   if (!query) {
     return res.status(400).json({ error: true, message: "Search query is required" });
   }
 
   try {
-    // Find notes that match the query in either the title or content fields
     const matchingNotes = await Note.find({
-      userId, // Filter by userId
+      userId,
       $or: [
-        { title: { $regex: new RegExp(query, "i") } }, // Case-insensitive regex search in title
-        { content: { $regex: new RegExp(query, "i") } } // Case-insensitive regex search in content
+        { title: { $regex: new RegExp(query, "i") } },
+        { content: { $regex: new RegExp(query, "i") } },
       ],
     });
 
@@ -212,7 +221,7 @@ app.get("/search-notes", authenticateToken, async (req, res) => {
   }
 });
 
-
 // Start server
 app.listen(8001, () => console.log("Server running on port 8001"));
+
 module.exports = app;
