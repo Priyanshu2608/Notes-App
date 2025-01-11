@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BASE_URL } from './Constants';
+import { BASE_URL } from './constants.js';
 
 // Create an axios instance with the base URL and timeout
 const axiosInstance = axios.create({
