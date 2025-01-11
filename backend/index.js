@@ -85,10 +85,10 @@ app.get("/get-all-notes", authenticateToken, async (req, res) => {
 
 app.get("/get-user", authenticateToken, async (req, res) => {
     try {
-      // Use `req.user._id` directly
+      
       const userId = req.user._id;
   
-      // Find the user by ID
+      
       const isUser = await User.findOne({ _id: userId });
       if (!isUser) {
         return res.status(401).json({ error: true, message: "User not found" });
@@ -182,6 +182,36 @@ app.put("/update-note-pinned/:noteId", authenticateToken, async(req,res)=>{
       return res.status(500).json({ error: true, message: "Internal Server Error" });
     }
 })
+
+app.get("/search-notes", authenticateToken, async (req, res) => {
+  const userId = req.user._id; // Retrieve user ID from authenticated token
+  const { query } = req.query; // Extract the query parameter
+
+  if (!query) {
+    return res.status(400).json({ error: true, message: "Search query is required" });
+  }
+
+  try {
+    // Find notes that match the query in either the title or content fields
+    const matchingNotes = await Note.find({
+      userId, // Filter by userId
+      $or: [
+        { title: { $regex: new RegExp(query, "i") } }, // Case-insensitive regex search in title
+        { content: { $regex: new RegExp(query, "i") } } // Case-insensitive regex search in content
+      ],
+    });
+
+    return res.json({
+      error: false,
+      notes: matchingNotes,
+      message: "Notes matching the search query retrieved successfully",
+    });
+  } catch (error) {
+    console.error("Error searching notes:", error);
+    return res.status(500).json({ error: true, message: "Internal Server Error" });
+  }
+});
+
 
 // Start server
 app.listen(8001, () => console.log("Server running on port 8001"));
