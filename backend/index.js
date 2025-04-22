@@ -9,11 +9,17 @@ const User = require("./models/user.model");
 const Note = require("./models/note.model");
 
 const app = express();
-const config = require("./config.json");
+
+// CORS configuration
+app.use(cors({
+  origin: "https://notes-app-rsfw.onrender.com/login",
+  credentials: true
+}));
 
 // MongoDB connection
+const connectionString = process.env.MONGO_URI;
 mongoose
-  .connect(config.connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(connectionString, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Database connected successfully"))
   .catch((err) => console.error("Database connection failed:", err));
 
@@ -38,7 +44,7 @@ app.post("/create-account", async (req, res) => {
     const isUser = await User.findOne({ email });
     if (isUser) return res.status(400).json({ error: true, message: "User already exists" });
 
-    const user = new User({ fullName, email, password }); // Save plain-text password
+    const user = new User({ fullName, email, password }); // Plain-text password, consider hashing
     await user.save();
 
     const accessToken = jwt.sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "30m" });
