@@ -12,7 +12,7 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: "https://notes-app-rsfw.onrender.com/login",
+  origin: "https://notes-app-rsfw.onrender.com",
   credentials: true
 }));
 
