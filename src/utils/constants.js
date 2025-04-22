@@ -1,1 +1,1 @@
-export const BASE_URL = 'http://localhost:8001'
+export const BASE_URL = 'https://notes-app-backend-f83c.onrender.com/'
