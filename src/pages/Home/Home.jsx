@@ -128,15 +128,14 @@ const Home = () => {
           />
         )}
       </div>
-
-      {/* Floating Add Button */}
-      <button
-        className="fixed z-50 bottom-10 right-10 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full shadow-xl transition-all hover:scale-110 duration-200"
-        onClick={() => setOpenAddEditModal({ isShown: true, type: "add", data: null })}
-        title="Add Note"
-      >
-        <MdAdd className="text-3xl" />
-      </button>
+     {/* Floating Add Button */}
+<button
+  className="fixed z-50 bottom-10 right-15 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full shadow-xl transition-all hover:scale-110 duration-200 flex items-center justify-center"
+  onClick={() => setOpenAddEditModal({ isShown: true, type: 'add', data: null })}
+  title="Add Note"
+>
+  <MdAdd className="text-3xl" />
+</button>
 
       {/* Glassmorphism Modal */}
       <Modal
