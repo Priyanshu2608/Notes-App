@@ -3,10 +3,17 @@ import TagInput from '../../Components/Input/TagInput';
 import { MdClose } from 'react-icons/md';
 import axiosInstance from '../../utils/axiosInstance';
 
+<<<<<<< HEAD:src/pages/Home/AddEditNotes.jsx
 const AddEditNotes = ({onClose, noteData,getAllNotes, type, showToastMessage}) => {
     const [title, setTitle] = useState(noteData?.title ||"");
     const [content, setContent] = useState(noteData?.content||"");
     const [tags, setTags] = useState(noteData?.tags||[]);
+=======
+const AddEditNotes = ({onClose, noteData,getAllNotes, type}) => {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [tags, setTags] = useState([]);
+>>>>>>> parent of 6165bf6 (edit your notes and app name is braindump):frontend/Notes-App/src/pages/Home/AddEditNotes.jsx
 
     const [error, seterror] = useState(null);
     const addNewNote = async ()=>{
@@ -34,6 +41,7 @@ const AddEditNotes = ({onClose, noteData,getAllNotes, type, showToastMessage}) =
         
       }
     };
+<<<<<<< HEAD:src/pages/Home/AddEditNotes.jsx
     const editNote = async ()=>{ 
       const noteId= noteData._id
       try{
@@ -59,6 +67,9 @@ const AddEditNotes = ({onClose, noteData,getAllNotes, type, showToastMessage}) =
 
       
     }};
+=======
+    const editNote = async ()=>{};
+>>>>>>> parent of 6165bf6 (edit your notes and app name is braindump):frontend/Notes-App/src/pages/Home/AddEditNotes.jsx
     const handleAddNote = ()=>{
       if (!title){
         seterror("Please Enter The Title");
@@ -112,7 +123,7 @@ const AddEditNotes = ({onClose, noteData,getAllNotes, type, showToastMessage}) =
         <TagInput tags={tags} setTags={setTags}/>
       </div>
       {error && <p className="text-red-500 text-xs pt-4">{error}</p>}
-      <button className="btn-primary font-medium mt-5 p-3" onClick={handleAddNote}>{type === "edit" ? "UPDATE": "ADD"}</button>
+      <button className="btn-primary font-medium mt-5 p-3" onClick={handleAddNote}>ADD</button>
     </div>
   )
 }
